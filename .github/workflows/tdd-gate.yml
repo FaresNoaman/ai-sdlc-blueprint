@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -16,4 +18,51 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run test -- --ci
+      - name: Check new code has tests
+        run: |
+          # Get changed source files (not test files)
+          CHANGED_SRC=$(git diff --name-only origin/main...HEAD \
+            | grep -E '^src/' \
+            | grep -v '\.test\.' \
+            | grep -v '\.spec\.' \
+            | grep -v '__tests__')
+
+          if [ -z "$CHANGED_SRC" ]; then
+            echo "✅ No source changes detected."
+            exit 0
+          fi
+
+          # For each changed source file, check a corresponding test exists
+          MISSING_TESTS=""
+          for file in $CHANGED_SRC; do
+            TEST_FILE=$(echo "$file" | sed 's/\.ts/.test.ts/' | sed 's/\.tsx/.test.tsx/')
+            ALT_TEST=$(echo "$file" | sed 's|src/|tests/|' | sed 's/\.ts/.test.ts/')
+            if [ ! -f "$TEST_FILE" ] && [ ! -f "$ALT_TEST" ]; then
+              MISSING_TESTS="$MISSING_TESTS\n  ❌ $file (no test found)"
+            fi
+          done
+
+          if [ -n "$MISSING_TESTS" ]; then
+            echo "❌ TDD violation: Source files changed without corresponding tests:"
+            echo -e "$MISSING_TESTS"
+            echo ""
+            echo "Every source file must have a test file. Write tests FIRST."
+            exit 1
+          fi
+
+          echo "✅ All changed source files have corresponding tests."
+
+      - name: Run tests with coverage
+        run: |
+          npm run test:coverage -- --ci
+
+      - name: Check coverage threshold
+        run: |
+          # Fail if coverage drops below 80%
+          COVERAGE=$(npx nyc report --reporter=json-summary \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['total']['lines']['pct'])")
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Test coverage is ${COVERAGE}% (minimum: 80%)"
+            exit 1
+          fi
+          echo "✅ Test coverage: ${COVERAGE}%"
