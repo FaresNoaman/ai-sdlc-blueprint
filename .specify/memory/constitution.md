@@ -1,50 +1,78 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Project Constitution
 
-## Core Principles
+## Project Identity
+- Name: AI SDLC Blueprint
+- Purpose: AI-assisted, spec-driven, TDD-enforced development system
+- Team Size: 1–5 developers
+- Cloud: AWS (Infrastructure as Code only)
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+---
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+## 1. Spec-First Development (NON-NEGOTIABLE)
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- No feature implementation begins without an approved specification.
+- Every feature must live under `.specify/specs/{number-name}/`
+- Each spec must include:
+  - spec.md
+  - plan.md
+  - tasks.md
+- Every Pull Request MUST reference its spec:
+  Spec: .specify/specs/{number-name}/
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Code serves the spec. The spec is the source of truth.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+---
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## 2. Mandatory Test-Driven Development (TDD)
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+All features must follow strict TDD:
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+1. Write tests FIRST
+2. Tests must FAIL
+3. Implement minimum code to pass
+4. Refactor while keeping tests green
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Rules:
+- No implementation code before tests exist.
+- Every new source file must have a test file.
+- Minimum coverage: 80%.
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+---
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+## 3. Architecture Boundaries
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- Frontend never directly accesses AWS SDK.
+- Backend handles all business logic.
+- Infrastructure must be defined using IaC (CDK/Terraform).
+- No AWS Console manual resource creation.
+- All DB schema changes require migrations.
+
+---
+
+## 4. Code Quality Standards
+
+- TypeScript strict mode (no `any`)
+- All public functions documented
+- Max file length: 300 lines
+- No unhandled async promises
+
+---
+
+## 5. Security Rules
+
+- No secrets committed to repo.
+- Use environment variables or AWS Secrets Manager.
+- All API endpoints require authentication unless explicitly public.
+- Input validation required on all user input.
+
+---
+
+## 6. Git Workflow
+
+- No direct push to main.
+- All work via feature branches:
+  feature/spec-{number}-{name}
+- All changes require:
+  - Passing CI checks
+  - Passing TDD gate
+  - 1 human review
