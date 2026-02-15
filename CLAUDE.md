@@ -37,7 +37,7 @@ npm run test:coverage
 
 Coverage must remain >= 80%.
 
----
+-----
 
 ## PR Requirements
 
