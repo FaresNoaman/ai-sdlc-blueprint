@@ -1,0 +1,19 @@
+name: Spec Governance Check
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for spec reference
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          if ! echo "$PR_BODY" | grep -qiE "\.specify/specs/"; then
+            echo "PR must reference a spec."
+            exit 1
+          fi

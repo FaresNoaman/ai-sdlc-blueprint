@@ -1,0 +1,29 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          model: "claude-sonnet-4-20250514"
+          prompt: |
+            Review this PR against CLAUDE.md and constitution.md.
+            Check:
+            1. Spec reference exists.
+            2. Tests written before implementation.
+            3. Security concerns.
+            4. Architecture violations.
+            5. Coverage concerns.
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
