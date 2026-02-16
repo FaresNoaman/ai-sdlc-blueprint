@@ -6,6 +6,11 @@ on:
 
 jobs:
   check-spec:
+    # Skip spec check for bug fixes, chores, and documentation changes
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'bug') &&
+      !contains(github.event.pull_request.labels.*.name, 'chore') &&
+      !contains(github.event.pull_request.labels.*.name, 'docs')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

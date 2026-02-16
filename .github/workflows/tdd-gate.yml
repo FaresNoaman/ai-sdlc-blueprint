@@ -59,9 +59,13 @@ jobs:
       - name: Check coverage threshold
         run: |
           # Fail if coverage drops below 80%
-          COVERAGE=$(npx nyc report --reporter=json-summary \
-            | python3 -c "import sys,json; print(json.load(sys.stdin)['total']['lines']['pct'])")
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "❌ Coverage summary file not found"
+            exit 1
+          fi
+          COVERAGE=$(node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct)")
+          COVERAGE_INT=${COVERAGE%.*}
+          if [ "$COVERAGE_INT" -lt 80 ]; then
             echo "❌ Test coverage is ${COVERAGE}% (minimum: 80%)"
             exit 1
           fi

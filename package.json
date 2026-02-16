@@ -1,0 +1,22 @@
+{
+  "name": "ai-sdlc-blueprint",
+  "private": true,
+  "version": "0.0.0",
+  "description": "AI SDLC Blueprint project",
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest",
+    "test:int": "jest --testMatch='**/tests/integration/**/*.test.ts'",
+    "test:e2e": "jest --testMatch='**/tests/e2e/**/*.test.ts'",
+    "test:coverage": "jest --coverage --coverageReporters=json-summary --coverageReporters=text --runInBand",
+    "lint": "echo 'Linting not configured yet'",
+    "check-secrets": "echo 'Secret scanning not configured yet'"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "nyc": "^17.1.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}
