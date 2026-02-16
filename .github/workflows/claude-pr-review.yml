@@ -20,7 +20,7 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          model: "claude-sonnet-4-20250514"
+          model: "claude-sonnet-4-5-20250929"
           prompt: |
             Review this PR against our project standards in CLAUDE.md.
             Check for:
@@ -31,3 +31,8 @@ jobs:
             5. Are there any TypeScript `any` types?
             Provide specific, actionable feedback.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+ 
+
+
+
+ 
