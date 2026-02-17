@@ -1,0 +1,23 @@
+name: Claude Issue Handler
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  handle:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          model: "claude-sonnet-4-5-20250929"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Claude reads the issue, creates a branch, implements, opens PR

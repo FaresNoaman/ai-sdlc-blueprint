@@ -6,9 +6,16 @@ on:
 
 jobs:
   test-gate:
+    # Skip TDD gate for chore/docs/test PRs
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'chore') &&
+      !contains(github.event.pull_request.labels.*.name, 'docs') &&
+      !contains(github.event.pull_request.labels.*.name, 'test')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -16,4 +23,77 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run test -- --ci
+      - name: Check new code has tests
+        run: |
+          echo "🔍 Checking for source files without tests..."
+          echo "Base branch: origin/${{ github.base_ref }}"
+          echo "Head branch: ${{ github.head_ref }}"
+          echo ""
+
+          # Get changed source files (not test files)
+          # Use the base ref instead of main, and PR head SHA
+          CHANGED_SRC=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.event.pull_request.head.sha }} \
+            | grep -E '^src/.*\.(ts|tsx|js|jsx)$' \
+            | grep -v '\.test\.' \
+            | grep -v '\.spec\.' \
+            | grep -v '__tests__')
+
+          echo "Changed source files:"
+          if [ -z "$CHANGED_SRC" ]; then
+            echo "  (none)"
+            echo ""
+            echo "✅ No source changes detected."
+            exit 0
+          fi
+
+          echo "$CHANGED_SRC" | sed 's/^/  - /'
+          echo ""
+
+          # For each changed source file, check a corresponding test exists
+          MISSING_TESTS=""
+          for file in $CHANGED_SRC; do
+            TEST_FILE=$(echo "$file" | sed 's/\.ts$/.test.ts/' | sed 's/\.tsx$/.test.tsx/' | sed 's/\.js$/.test.js/' | sed 's/\.jsx$/.test.jsx/')
+            ALT_TEST=$(echo "$file" | sed 's|src/|tests/|' | sed 's/\.ts$/.test.ts/' | sed 's/\.js$/.test.js/')
+
+            if [ -f "$TEST_FILE" ]; then
+              echo "  ✅ $file → $TEST_FILE"
+            elif [ -f "$ALT_TEST" ]; then
+              echo "  ✅ $file → $ALT_TEST"
+            else
+              echo "  ❌ $file (no test found)"
+              MISSING_TESTS="$MISSING_TESTS\n  ❌ $file"
+            fi
+          done
+          echo ""
+
+          if [ -n "$MISSING_TESTS" ]; then
+            echo "❌ TDD violation: Source files changed without corresponding tests:"
+            echo -e "$MISSING_TESTS"
+            echo ""
+            echo "Every source file must have a test file. Write tests FIRST."
+            echo "Expected locations:"
+            echo "  - Co-located: src/example.ts → src/example.test.ts"
+            echo "  - Separate: src/example.ts → tests/example.test.ts"
+            exit 1
+          fi
+
+          echo "✅ All changed source files have corresponding tests."
+
+      - name: Run tests with coverage
+        run: |
+          npm run test:coverage -- --ci
+
+      - name: Check coverage threshold
+        run: |
+          # Fail if coverage drops below 80%
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "❌ Coverage summary file not found"
+            exit 1
+          fi
+          COVERAGE=$(node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct)")
+          COVERAGE_INT=${COVERAGE%.*}
+          if [ "$COVERAGE_INT" -lt 80 ]; then
+            echo "❌ Test coverage is ${COVERAGE}% (minimum: 80%)"
+            exit 1
+          fi
+          echo "✅ Test coverage: ${COVERAGE}%"

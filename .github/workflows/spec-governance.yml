@@ -2,10 +2,15 @@ name: Spec Governance Check
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, edited, synchronize]
 
 jobs:
   check-spec:
+    # Skip spec check for bug fixes, chores, and documentation changes
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'bug') &&
+      !contains(github.event.pull_request.labels.*.name, 'chore') &&
+      !contains(github.event.pull_request.labels.*.name, 'docs')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,7 +18,32 @@ jobs:
       - name: Check for spec reference
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
-          if ! echo "$PR_BODY" | grep -qiE "\.specify/specs/"; then
-            echo "PR must reference a spec."
+          # Check PR body references a spec
+          if ! echo "$PR_BODY" | grep -qiE "spec:|specification:|\.specify/specs/"; then
+            echo "❌ PR must reference a specification."
+            echo "Add 'Spec: .specify/specs/{name}/' to your PR description."
             exit 1
+          fi
+
+          # Check that referenced spec directory exists
+          SPEC_PATH=$(echo "$PR_BODY" | grep -oP '\.specify/specs/[^\s]+' | head -1)
+          if [ -n "$SPEC_PATH" ] && [ ! -d "$SPEC_PATH" ]; then
+            echo "❌ Referenced spec path does not exist: $SPEC_PATH"
+            exit 1
+          fi
+
+          echo "✅ Spec reference found."
+
+      - name: Verify spec completeness
+        run: |
+          SPEC_PATH=$(echo "${{ github.event.pull_request.body }}" | grep -oP '\.specify/specs/[^\s/]+' | head -1)
+          if [ -n "$SPEC_PATH" ]; then
+            for file in spec.md plan.md tasks.md; do
+              if [ ! -f "$SPEC_PATH/$file" ]; then
+                echo "⚠️ Missing $file in $SPEC_PATH"
+                echo "Spec should have: spec.md, plan.md, and tasks.md"
+                exit 1
+              fi
+            done
+            echo "✅ Spec is complete (spec + plan + tasks)."
           fi
