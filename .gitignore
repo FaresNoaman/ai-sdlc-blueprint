@@ -23,13 +23,15 @@ out/
 .env.*.local
 *.env
 
-# IDE
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
+
+# Claude local settings
+.claude/settings.local.json
 
 # AWS
 .aws-sam/
@@ -49,3 +51,5 @@ temp/
 Thumbs.db
 .DS_Store
 
+# Keep empty directories
+!.gitkeep
